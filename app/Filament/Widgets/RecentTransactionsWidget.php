@@ -3,44 +3,47 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Transaksi;
-use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 class RecentTransactionsWidget extends BaseWidget
 {
-    protected int | string | array $columnSpan = 'full';
+    protected static ?string $heading = 'Transaksi Terbaru';
 
-    public function table(Table $table): Table
+    /**
+     * Mengambil query untuk transaksi terbaru beserta count item.
+     */
+    protected function getTableQuery(): Builder|Relation|null
     {
-        return $table
-            ->query(Transaksi::query()->latest()->limit(5))
-            ->columns([
-                TextColumn::make('produk.name')
-                    ->label('Produk')
-                    ->searchable()
-                    ->sortable(),
-                    
-                TextColumn::make('jumlah')
-                    ->numeric()
-                    ->sortable(),
-                    
-                TextColumn::make('total_harga')
-                    ->money('IDR')
-                    ->sortable(),
-                    
-                BadgeColumn::make('status')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'selesai',
-                    ])
-                    ->sortable(),
-                    
-                TextColumn::make('created_at')
-                    ->dateTime('d M Y H:i')
-                    ->label('Waktu Transaksi')
-                    ->sortable(),
-            ]);
+        return Transaksi::withCount('items')
+            ->latest()
+            ->limit(5);
+    }
+
+    /**
+     * Mendefinisikan kolom-kolom tabel yang akan ditampilkan.
+     */
+    protected function getTableColumns(): array
+    {
+        return [
+            TextColumn::make('id')
+                ->label('ID')
+                ->sortable(),
+            TextColumn::make('total_harga')
+                ->label('Total Harga')
+                ->money('idr', true)
+                ->sortable(),
+            TextColumn::make('status')
+                ->label('Status')
+                ->sortable(),
+            TextColumn::make('created_at')
+                ->label('Dibuat')
+                ->dateTime('d M Y H:i')
+                ->sortable(),
+            TextColumn::make('items_count')
+                ->label('Jumlah Barang'),
+        ];
     }
 }
